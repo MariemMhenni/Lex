@@ -4,7 +4,7 @@ run: compil
 	./src/main
 
 compil:
-	gcc -O0 -g3 src/main.c -o src/main
+	gcc -O0 -g3 -Wall src/main.c -o src/main
 
 clean:
 	rm -rf src/main
