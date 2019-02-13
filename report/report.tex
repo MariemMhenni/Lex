@@ -1,0 +1,191 @@
+% Preamble
+% =============================================================================
+
+% Class of the document.
+\documentclass[12pt,a4paper]{article}
+% article : short article.
+% report  : mid-length report.
+% book    : book or thesis redaction.
+
+% Paragraph skip length (default to 0).
+\setlength{\parskip}{1ex}
+
+% Packages
+% =============================================================================
+
+% Encoding
+% -----------------------------------------------------------------------------
+
+% Babel.
+\usepackage[french]{babel}
+% FontEnc.
+\usepackage[T1]{fontenc}
+% InputEnc.
+\usepackage[utf8]{inputenc}
+
+% Define \escapeus command to escape underscores.
+\makeatletter
+\DeclareRobustCommand*{\escapeus}[1]{
+    \begingroup\@activeus\scantokens{#1\endinput}\endgroup}
+\begingroup\lccode`\~=`\_\relax
+    \lowercase{\endgroup\def\@activeus{\catcode`\_=\active \let~\_}}
+\makeatother
+
+% Text
+% -----------------------------------------------------------------------------
+
+% Acronym.
+\usepackage{acronym}
+% CsQuote.
+\usepackage[style=french,french=guillemets]{csquotes}
+% Enumerate.
+\usepackage{enumerate}
+% HyperRef.
+\usepackage[hyperfootnotes=false,hidelinks]{hyperref}
+% URL.
+\usepackage{url}
+
+% Algorithms
+% -----------------------------------------------------------------------------
+
+% Algorithm2E.
+\usepackage[french,onelanguage,linesnumbered,ruled,vlined,commentsnumbered]{algorithm2e}
+
+% Source code
+% -----------------------------------------------------------------------------
+
+% Listings.
+\usepackage{listings}
+% Minted.
+\usepackage{minted}
+% Caption.
+\usepackage{caption}
+\newenvironment{code}{\captionsetup{type=listing}}{}
+
+% Files
+% -----------------------------------------------------------------------------
+
+% FancyVRB.
+\usepackage{fancyvrb}
+% Redefine \VerbatimInput.
+\RecustomVerbatimCommand{\VerbatimInput}{VerbatimInput}
+{
+    fontsize=\footnotesize,
+    frame=lines,         % Top and bottom rule only.
+    framesep=1.5em,      % Separation between frame and text.
+    rulecolor=\color{red!50!green!50!blue!50!},
+    labelposition=topline,
+    commandchars=\|\(\), % Escape character and argument delimiters for commands within the verbatim.
+    commentchar=*        % Comment character.
+}
+
+% Figures
+% -----------------------------------------------------------------------------
+
+% GraphicX.
+\usepackage{graphicx}
+% SVG.
+\usepackage{svg}
+% WrapFig.
+\usepackage{wrapfig}
+
+% Charts
+% -----------------------------------------------------------------------------
+
+% PGFPLots
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\usepgfplotslibrary{units}
+
+% Mathematics
+% -----------------------------------------------------------------------------
+
+% AmsFonts.
+\usepackage{amsfonts}
+% AmsMath.
+\usepackage{amsmath}
+% AmsText.
+\usepackage{amstext}
+% AmsThm.
+\usepackage{amsthm}
+\newtheorem{prr}{Propriété}
+\newtheorem{pro}{Proposition}
+\newtheorem{thm}{Théorème}
+\newtheorem{lem}{Lemme}
+% NumPrint.
+\usepackage{numprint}
+
+% Physics
+% -----------------------------------------------------------------------------
+
+% Physics.
+\usepackage{physics}
+
+% Presentation
+% -----------------------------------------------------------------------------
+
+% XColor.
+\usepackage{xcolor}
+
+% References
+% -----------------------------------------------------------------------------
+
+% CleveRef.
+\usepackage{cleveref}
+
+% Structure.
+% -----------------------------------------------------------------------------
+
+% Geometry.
+\usepackage{geometry}
+% PDFLScape.
+\usepackage{pdflscape}
+% MultiCol.
+\usepackage{multicol}
+% TitleSec.
+\usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage} % Use a page break before new sections.
+% VMargin.
+\usepackage{vmargin}
+% FootMisc.
+\usepackage[bottom]{footmisc}
+
+% Symbols
+% -----------------------------------------------------------------------------
+
+% SIUnitX.
+\usepackage{siunitx}
+
+% Table
+% -----------------------------------------------------------------------------
+
+% Array.
+\usepackage{array}
+% BookTabs.
+\usepackage{booktabs}
+% CSVSimple.
+\usepackage{csvsimple}
+
+% Document
+% =============================================================================
+
+\begin{document}
+
+\title{Projet de compilation -- Développement d'un analyseur lexical}
+\author{Pierre AYOUB -- Océane FLAMANT}
+
+\maketitle
+
+\begin{figure}[b]
+    \centering
+    \includegraphics[scale=0.3]{figures/isty.jpg}
+\end{figure}
+
+
+\tableofcontents
+
+\section{Introduction}
+
+\section{Conclusion}
+
+\end{document}
