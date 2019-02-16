@@ -42,30 +42,52 @@ typedef struct afd {
 
 /**
  * Retourne un automate standard reconnaissant le langage vide.
- * @TODO
  */
 afn_s af_std_gen_empty_lang()
 {
-    return;
+    afn_s af;
+    af.states = 1;          /* 1 seul état. */
+    af.state_init = 0;      /* L'état initial est l'état 0. */
+    af.state_fin = NULL;    /* Aucun état final. */
+    af.trans_nb = 0;        /* 0 transition. */
+    af.trans = NULL;        /* Ancune transition. */
+    return af;
 }
 
 /**
  * Retourne un automate standard reconnaissant le langage composé du seul mot vide.
- * @TODO
  */
 afn_s af_std_gen_empty_word()
 {
-    return;
+    afn_s af;
+    af.states = 1;          /* 1 seul état. */
+    af.state_init = 0;      /* L'état initial est l'état 0. */
+    af.state_fin = calloc(af.states, sizeof(*af.state_fin));
+    af.state_fin[0] = 1;    /* 1 seul état final : l'état initial. */
+    af.trans_nb = 0;        /* 0 transition. */
+    af.trans = NULL;        /* Ancune transition. */
+    return af;
 }
 
 /**
  * Retourne un automate standard reconnaissant le langage composé d'un mot d'un
  * caractère passé en paramètre.
- * @TODO
  */
 afn_s af_std_gen_word(const char c)
 {
-    return;
+    afn_s af;
+    af.states = 2;                 /* 2 états. */
+    af.state_init = 0;             /* L'état initial est l'état 0. */
+    af.state_fin = calloc(af.states, sizeof(*af.state_fin));
+    af.state_fin[1] = 1;           /* 1 seul état final : l'état 1. */
+    af.trans_nb = 1;               /* 1 seule transition. */
+    af.trans = calloc(af.trans_nb, sizeof(*af.trans));
+    af.trans[0].st_in = 0;         /* Transition depuis l'état inital. */
+    af.trans[0].st_out_nb = 1;     /* Transition vers qu'un seul état. */
+    af.trans[0].st_out = calloc(af.trans[0].st_out_nb, sizeof(*af.trans[0].st_out));
+    af.trans[0].st_out[0] = 1;     /* Transition possible vers l'état 1. */
+    af.trans[0].c = c;             /* Transition sur le caractère donné. */
+    return af;
 }
 
 /* Fonctions pour reconnaître des langages plus évolués. */
