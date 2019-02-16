@@ -3,13 +3,32 @@
 
 /* Structures de données pour représenter un automate. */
 
+/** Structure d'une fonction de transition pour automate fini déterministe. */
+typedef struct transf {
+    int st_in;  /*!< Numéro de l'état sur lequelle peut arriver la transition. */
+    int st_out; /*!< Numéro de l'état après la transition. */
+    char c;     /*!< Caractère de l'alphabet sur lequelle a lieu la transition. */
+} transf_s;
+
+/** Structure d'une fonction de transition pour automate fini non-déterministe. */
+typedef struct transfn {
+    int st_in;      /*!< Numéro de l'état sur lequelle peut arriver la transition. */
+    int * st_out;   /*!< Tableau de numéros d'états possibles après la transition. */
+    char c;         /*!< Caractère de l'alphabet sur lequelle a lieu la transition. */
+} transfn_s;
+
 /** Structure d'un automate fini non-déterministe. @TODO */
-struct afn {
-};
+typedef struct afn {
+} afn_s;
 
 /** Structure d'un automate fini déterministe. @TODO */
-struct afd {
-};
+typedef struct afd {
+    int states;       /*!< Nombre d'état de l'automate. Les états sont numérotés de 0 à (states - 1). */
+    int state_init;   /*!< Numéro de l'état initial. */
+    int * state_fin;  /*!< Si state_fin[i] est à 1, alors l'état numéro i est un état final. */
+    char * alph;      /*!< Alphabet sur lequel l'automate opère. */
+    transf_s * trans; /*!< Tableau de fonction de transition. */
+} afd_s;
 
 /* Fonctions pour reconnaître les automates de base de la méthode. */
 
@@ -17,7 +36,7 @@ struct afd {
  * Retourne un automate standard reconnaissant le langage vide.
  * @TODO
  */
-struct afn af_std_gen_empty_lang()
+afn_s af_std_gen_empty_lang()
 {
     return;
 }
@@ -26,7 +45,7 @@ struct afn af_std_gen_empty_lang()
  * Retourne un automate standard reconnaissant le langage composé du seul mot vide.
  * @TODO
  */
-struct afn af_std_gen_empty_word()
+afn_s af_std_gen_empty_word()
 {
     return;
 }
@@ -36,7 +55,7 @@ struct afn af_std_gen_empty_word()
  * caractère passé en paramètre.
  * @TODO
  */
-struct afn af_std_gen_word(const char c)
+afn_s af_std_gen_word(const char c)
 {
     return;
 }
@@ -48,7 +67,7 @@ struct afn af_std_gen_word(const char c)
  * reconnus par deux automates.
  * @TODO
  */
-struct afn af_std_union(struct afn a1, struct afn a2)
+afn_s af_std_union(afn_s a1, afn_s a2)
 {
     return;
 }
@@ -58,7 +77,7 @@ struct afn af_std_union(struct afn a1, struct afn a2)
  * reconnus par deux automates.
  * @TODO
  */
-struct afn af_std_cat(struct afn a1, struct afn a2)
+afn_s af_std_cat(afn_s a1, afn_s a2)
 {
     return;
 }
@@ -68,7 +87,7 @@ struct afn af_std_cat(struct afn a1, struct afn a2)
  * du langage reconnu par un automate.
  * @TODO
  */
-struct afn af_std_star(struct afn a)
+afn_s af_std_star(afn_s a)
 {
     return;
 }
@@ -82,7 +101,7 @@ struct afn af_std_star(struct afn a)
  * @return 1 si le mot est reconnu, 0 sinon. 
  * @TODO
  */
-int afd_exec(const struct afd a, const char * m)
+int afd_exec(const afd_s a, const char * m)
 {
     return 0;
 }
@@ -92,7 +111,7 @@ int afd_exec(const struct afd a, const char * m)
  * déterministe standard.
  * @TODO
  */
-struct afd afd_from_af_std(const struct afd a)
+afd_s afd_from_af_std(const afd_s a)
 {
     return;
 }
@@ -101,7 +120,7 @@ struct afd afd_from_af_std(const struct afd a)
  * Minimise un automate fini standard déterministe.
  * @TODO
  */
-struct afd afd_min_from_afd(const struct afd a)
+afd_s afd_min_from_afd(const afd_s a)
 {
     return;
 }
