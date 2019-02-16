@@ -54,3 +54,4 @@ dkms.conf
 src/main
 tags
 types_c.taghl
+.gdb_history
