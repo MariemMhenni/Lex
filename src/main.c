@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Par défaut, tout nos automates travaillent sur l'alphabet ASCII. */
+
 /* Structures de données pour représenter un automate. */
 
 /** Structure d'une fonction de transition pour automate fini déterministe. */
@@ -13,20 +15,26 @@ typedef struct transf {
 /** Structure d'une fonction de transition pour automate fini non-déterministe. */
 typedef struct transfn {
     int st_in;      /*!< Numéro de l'état sur lequelle peut arriver la transition. */
+    int st_out_nb;  /*!< Nombre d'état possibles après la transition. */
     int * st_out;   /*!< Tableau de numéros d'états possibles après la transition. */
     char c;         /*!< Caractère de l'alphabet sur lequelle a lieu la transition. */
 } transfn_s;
 
-/** Structure d'un automate fini non-déterministe. @TODO */
+/** Structure d'un automate fini non-déterministe. */
 typedef struct afn {
+    int states;         /*!< Nombre d'état de l'automate. Les états sont numérotés de 0 à (states - 1). */
+    int state_init;     /*!< Numéro de l'état initial. */
+    int * state_fin;    /*!< Si state_fin[i] est à 1, alors l'état numéro i est un état final. */
+    int trans_nb;       /*!< Nombre de transitions. */
+    transfn_s * trans;  /*!< Tableau de fonction de transition. */
 } afn_s;
 
-/** Structure d'un automate fini déterministe. @TODO */
+/** Structure d'un automate fini déterministe. */
 typedef struct afd {
     int states;       /*!< Nombre d'état de l'automate. Les états sont numérotés de 0 à (states - 1). */
     int state_init;   /*!< Numéro de l'état initial. */
     int * state_fin;  /*!< Si state_fin[i] est à 1, alors l'état numéro i est un état final. */
-    char * alph;      /*!< Alphabet sur lequel l'automate opère. */
+    int trans_nb;     /*!< Nombre de transitions. */
     transf_s * trans; /*!< Tableau de fonction de transition. */
 } afd_s;
 
