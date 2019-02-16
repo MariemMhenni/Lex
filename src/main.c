@@ -90,6 +90,26 @@ afn_s af_std_gen_word(const char c)
     return af;
 }
 
+/**
+ * Libère la mémoire d'un automate fini non-déterministe.
+ */
+void afn_free(afn_s af)
+{
+    free(af.state_fin);
+    for (int i = 0; af.trans && i < af.trans_nb; i++)
+        free(af.trans[i].st_out);
+    free(af.trans);
+}
+
+/**
+ * Libère la mémoire d'un automate fini déterministe.
+ */
+void afd_free(afd_s af)
+{
+    free(af.state_fin);
+    free(af.trans);
+}
+
 /* Fonctions pour reconnaître des langages plus évolués. */
 
 /**
