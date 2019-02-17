@@ -1,71 +1,61 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-/* Par défaut, tout nos automates travaillent sur l'alphabet ASCII. */
+#include <string.h>
 
 /* Structures de données pour représenter un automate. */
 
-/** Structure d'une fonction de transition pour automate fini déterministe. */
-typedef struct transf {
-    int st_in;  /*!< Numéro de l'état sur lequelle peut arriver la transition. */
-    int st_out; /*!< Numéro de l'état après la transition. */
-    char c;     /*!< Caractère de l'alphabet sur lequelle a lieu la transition. */
-} transf_s;
+/* Par défaut, tout nos automates travaillent sur l'alphabet ASCII. De plus,
+ * comme tout nos automates sont standards, nous définissons l'état initial
+ * d'un automate comme étant l'état d'indice 0. */
 
-/** Structure d'une fonction de transition pour automate fini non-déterministe. */
-typedef struct transfn {
-    int st_in;      /*!< Numéro de l'état sur lequelle peut arriver la transition. */
-    int st_out_nb;  /*!< Nombre d'état possibles après la transition. */
-    int * st_out;   /*!< Tableau de numéros d'états possibles après la transition. */
-    char c;         /*!< Caractère de l'alphabet sur lequelle a lieu la transition. */
-} transfn_s;
+/* Numéro de l'état initial. */
+#define ST_INIT 0
 
-/** Structure d'un automate fini non-déterministe. */
-typedef struct afn {
-    int states;         /*!< Nombre d'état de l'automate. Les états sont numérotés de 0 à (states - 1). */
-    int state_init;     /*!< Numéro de l'état initial. */
-    int * state_fin;    /*!< Si state_fin[i] est à 1, alors l'état numéro i est un état final. */
-    int trans_nb;       /*!< Nombre de transitions. */
-    transfn_s * trans;  /*!< Tableau de fonction de transition. */
-} afn_s;
+/** Structure de fonctions de transition. */
+typedef struct trans {
+    int nb;   /*!< Nombre de transitions possibles. nb = 1 pour un AFD, nb >= 1
+                   pour un AFN. nb = 0 signifique que l'état ne possède aucune
+                   transition. */
+    int * st; /*!< st[i] correspond à l'état après la transition sur c[i]. */
+    char * c; /*!< c[i] correspond au caractère de la transition i. */
+} trans_s;
 
-/** Structure d'un automate fini déterministe. */
-typedef struct afd {
-    int states;       /*!< Nombre d'état de l'automate. Les états sont numérotés de 0 à (states - 1). */
-    int state_init;   /*!< Numéro de l'état initial. */
-    int * state_fin;  /*!< Si state_fin[i] est à 1, alors l'état numéro i est un état final. */
-    int trans_nb;     /*!< Nombre de transitions. */
-    transf_s * trans; /*!< Tableau de fonction de transition. */
-} afd_s;
+/** Structure d'un automate fini. */
+typedef struct af {
+    int st_nb;    /*!< Nombre d'état de l'automate. Les états sont numérotés de 0 à (states - 1). */
+    int * st_ac;  /*!< Si state_fin[i] est à 1, alors l'état numéro i est un état accepteur. */
+    trans_s * tr; /*!< trans[i] correspond à la transition pour l'état i. */
+} af_s;
+
+/** Type d'un automate fini déterministe. */
+typedef struct af afd;
+/** Type d'un automate fini non-déterministe. */
+typedef struct af afn;
 
 /* Fonctions pour reconnaître les automates de base de la méthode. */
 
 /**
  * Retourne un automate standard reconnaissant le langage vide.
  */
-afn_s af_std_gen_empty_lang()
+afn af_std_gen_empty_lang()
 {
-    afn_s af;
-    af.states = 1;          /* 1 seul état. */
-    af.state_init = 0;      /* L'état initial est l'état 0. */
-    af.state_fin = NULL;    /* Aucun état final. */
-    af.trans_nb = 0;        /* 0 transition. */
-    af.trans = NULL;        /* Ancune transition. */
+    afn af = {0};
+    af.st_nb = 1;                                   /* 1 seul état. */
+    af.st_ac = calloc(af.st_nb, sizeof(*af.st_ac)); /* Aucun état accepteur. */
+    af.tr = calloc(af.st_nb, sizeof(*af.tr));       /* Ancune transition. */
     return af;
 }
 
 /**
  * Retourne un automate standard reconnaissant le langage composé du seul mot vide.
  */
-afn_s af_std_gen_empty_word()
+afn af_std_gen_empty_word()
 {
-    afn_s af;
-    af.states = 1;          /* 1 seul état. */
-    af.state_init = 0;      /* L'état initial est l'état 0. */
-    af.state_fin = calloc(af.states, sizeof(*af.state_fin));
-    af.state_fin[0] = 1;    /* 1 seul état final : l'état initial. */
-    af.trans_nb = 0;        /* 0 transition. */
-    af.trans = NULL;        /* Ancune transition. */
+    afn af = {0};
+    af.st_nb = 1;                             /* 1 seul état. */
+    af.st_ac = calloc(af.st_nb, sizeof(*af.st_ac));
+    af.st_ac[ST_INIT] = 1;                    /* 1 seul état accepteur : l'état initial. */
+    af.tr = calloc(af.st_nb, sizeof(*af.tr)); /* Ancune transition. */
     return af;
 }
 
@@ -73,41 +63,30 @@ afn_s af_std_gen_empty_word()
  * Retourne un automate standard reconnaissant le langage composé d'un mot d'un
  * caractère passé en paramètre.
  */
-afn_s af_std_gen_word(const char c)
+afn af_std_gen_word(const char c)
 {
-    afn_s af;
-    af.states = 2;                 /* 2 états. */
-    af.state_init = 0;             /* L'état initial est l'état 0. */
-    af.state_fin = calloc(af.states, sizeof(*af.state_fin));
-    af.state_fin[1] = 1;           /* 1 seul état final : l'état 1. */
-    af.trans_nb = 1;               /* 1 seule transition. */
-    af.trans = calloc(af.trans_nb, sizeof(*af.trans));
-    af.trans[0].st_in = 0;         /* Transition depuis l'état inital. */
-    af.trans[0].st_out_nb = 1;     /* Transition vers qu'un seul état. */
-    af.trans[0].st_out = calloc(af.trans[0].st_out_nb, sizeof(*af.trans[0].st_out));
-    af.trans[0].st_out[0] = 1;     /* Transition possible vers l'état 1. */
-    af.trans[0].c = c;             /* Transition sur le caractère donné. */
+    afn af = {0};
+    af.st_nb = 2;             /* 2 états. */
+    af.st_ac = calloc(af.st_nb, sizeof(*af.st_ac));
+    af.st_ac[1] = 1;          /* 1 seul état accepteur : l'état 1. */
+    af.tr = calloc(af.st_nb, sizeof(*af.tr));
+    af.tr[ST_INIT].nb = 1;    /* 1 seule transition. */
+    af.tr[ST_INIT].st = calloc(af.tr[ST_INIT].nb, sizeof(*af.tr[ST_INIT].st));
+    af.tr[ST_INIT].c  = calloc(af.tr[ST_INIT].nb, sizeof(*af.tr[ST_INIT].c));
+    af.tr[ST_INIT].st[0] = 1; /* Transition possible vers l'état 1. */
+    af.tr[ST_INIT].c[0]  = c; /* Transition sur le caractère donné. */
     return af;
 }
 
 /**
- * Libère la mémoire d'un automate fini non-déterministe.
+ * Libère la mémoire d'un automate.
  */
-void afn_free(afn_s af)
+void af_free(af_s af)
 {
-    free(af.state_fin);
-    for (int i = 0; af.trans && i < af.trans_nb; i++)
-        free(af.trans[i].st_out);
-    free(af.trans);
-}
-
-/**
- * Libère la mémoire d'un automate fini déterministe.
- */
-void afd_free(afd_s af)
-{
-    free(af.state_fin);
-    free(af.trans);
+    free(af.st_ac);
+    for (int i = 0; i < af.st_nb; i++)
+        free(af.tr[i].st), free(af.tr[i].c);
+    free(af.tr);
 }
 
 /* Fonctions pour reconnaître des langages plus évolués. */
@@ -117,9 +96,34 @@ void afd_free(afd_s af)
  * reconnus par deux automates.
  * @TODO
  */
-afn_s af_std_union(afn_s a1, afn_s a2)
+afn af_std_union(afn a1, afn a2)
 {
-    return;
+    afn af = {0};
+    /* Nombre d'état. */
+    af.st_nb = a1.st_nb + a2.st_nb - 1;
+    
+    /* États finaux. */
+    af.st_ac = calloc(af.st_nb, sizeof(*af.st_ac));
+    /* Indique si le nouvel état initial doit être accepteur. */
+    af.st_ac[ST_INIT] = a1.st_ac[ST_INIT] || a2.st_ac[ST_INIT];
+    /* Copie les listes d'états finaux successivement hormis les anciens états initiaux. */
+    memcpy(&af.st_ac[ST_INIT + 1], &a1.st_ac[ST_INIT + 1], (a1.st_nb - 1) * sizeof(*a1.st_ac));
+    memcpy(&af.st_ac[a1.st_nb],    &a2.st_ac[ST_INIT + 1], (a2.st_nb - 1) * sizeof(*a2.st_ac));
+
+    /* Transitions. */
+    af.tr = calloc(af.st_nb, sizeof(*af.tr));
+    /* Copie les listes de transitions successivement hormis les anciens états initiaux. */
+    memcpy(&af.tr[ST_INIT + 1], &a1.tr[ST_INIT + 1], (a1.st_nb - 1) * sizeof(*a1.tr));
+    memcpy(&af.tr[a1.st_nb],    &a2.tr[ST_INIT + 1], (a2.st_nb - 1) * sizeof(*a2.tr));
+    /* Concatène les transitions des états initiaux des deux automates dans un seul état inital. */
+    af.tr[ST_INIT].nb = a1.tr[ST_INIT].nb + a2.tr[ST_INIT].nb;
+    af.tr[ST_INIT].st = calloc(af.tr[ST_INIT].nb, sizeof(*af.tr[ST_INIT].st));
+    af.tr[ST_INIT].c  = calloc(af.tr[ST_INIT].nb, sizeof(*af.tr[ST_INIT].c));
+    memcpy(af.tr[ST_INIT].st,                       a1.tr[ST_INIT].st, a1.tr[ST_INIT].nb * sizeof(*a1.tr[ST_INIT].st));
+    memcpy(af.tr[ST_INIT].c,                        a1.tr[ST_INIT].c,  a1.tr[ST_INIT].nb * sizeof(*a1.tr[ST_INIT].c));
+    memcpy(&af.tr[ST_INIT].st[a1.tr[ST_INIT].nb],   a2.tr[ST_INIT].st, a2.tr[ST_INIT].nb * sizeof(*a2.tr[ST_INIT].st));
+    memcpy(&af.tr[ST_INIT].c[a1.tr[ST_INIT].nb],    a2.tr[ST_INIT].c,  a2.tr[ST_INIT].nb * sizeof(*a2.tr[ST_INIT].c));
+    return af;
 }
 
 /**
@@ -127,9 +131,10 @@ afn_s af_std_union(afn_s a1, afn_s a2)
  * reconnus par deux automates.
  * @TODO
  */
-afn_s af_std_cat(afn_s a1, afn_s a2)
+afn af_std_cat(afn a1, afn a2)
 {
-    return;
+    afn af = {0};
+    return af;
 }
 
 /**
@@ -137,9 +142,10 @@ afn_s af_std_cat(afn_s a1, afn_s a2)
  * du langage reconnu par un automate.
  * @TODO
  */
-afn_s af_std_star(afn_s a)
+afn af_std_star(afn a)
 {
-    return;
+    afn af = {0};
+    return af;
 }
 
 /* Fonctions pour manipuler un automate fini déterministe. */
@@ -151,7 +157,7 @@ afn_s af_std_star(afn_s a)
  * @return 1 si le mot est reconnu, 0 sinon. 
  * @TODO
  */
-int afd_exec(const afd_s a, const char * m)
+int afd_exec(const afd a, const char * m)
 {
     return 0;
 }
@@ -161,18 +167,20 @@ int afd_exec(const afd_s a, const char * m)
  * déterministe standard.
  * @TODO
  */
-afd_s afd_from_af_std(const afd_s a)
+afd afd_from_af_std(const afd a)
 {
-    return;
+    afd af = {0};
+    return af;
 }
 
 /**
  * Minimise un automate fini standard déterministe.
  * @TODO
  */
-afd_s afd_min_from_afd(const afd_s a)
+afd afd_min_from_afd(const afd a)
 {
-    return;
+    afd af = {0};
+    return af;
 }
 
 int main(int argc, char *argv[])
