@@ -35,6 +35,25 @@ typedef struct af afn;
 /* Fonctions utilitaires. */
 
 /**
+ * Affiche un automate sur le terminal.
+ */
+static void af_display(struct af a, char * title)
+{
+    if (title)
+        printf("| Automate %s :\n", title);   
+    printf("| - Nombre d'états de l'automate : %d\n", a.st_nb);
+    for (int i = 0; i < a.st_nb; i++) {
+        printf("| -- Etat n°%d :\n", i);
+        if (a.st_ac[i])
+            printf("| --- Accepteur : Oui\n");
+        else
+            printf("| --- Accepteur : Non\n");
+        for (int j = 0; j < a.tr[i].nb; j++)
+            printf("| ---- Transition sur le caractère '%c' vers l'état n°%d\n", a.tr[i].c[j], a.tr[i].st[j]);
+    }
+}
+
+/**
  * Met à jour le numéro des transitions d'un état.
  * @param st tableau des numéros des états.
  * @param size taille du tableau.
@@ -70,6 +89,26 @@ static void af_std_trans_copy(struct af * a1, struct af * a2, int a1i, int a2i, 
         if (update)
             af_std_trans_update(a1->tr[a1i].st, a1->tr[a1i].nb, update);
     }
+}
+
+/**
+ * Concatène deux transitions. On suppose que tf contient déjà les transitions
+ * de t1 (voir @af_std_trans_copy()).
+ * @param tf transition finale.
+ * @param t1 transition n°1.
+ * @param t2 transition n°2.
+ * @param update si update > 1, indique qu'il faut mettre à jour les transitions
+ * provenant de t2 avec un offset de "update".
+ */
+static void af_std_trans_cat(trans_s * tf, trans_s * t1, trans_s * t2, const int update)
+{
+    tf->nb += t2->nb;
+    tf->st = realloc(tf->st, tf->nb * sizeof(*tf->st));
+    tf->c  = realloc(tf->c,  tf->nb * sizeof(*tf->c));
+    memcpy(&tf->st[t1->nb], t2->st, t2->nb * sizeof(*tf->st));
+    memcpy(&tf->c[t1->nb],  t2->c,  t2->nb * sizeof(*tf->c));
+    if (update)
+        af_std_trans_update(&tf->st[t1->nb], t2->nb, update);
 }
 
 /* Fonctions pour reconnaître les automates de base de la méthode. */
@@ -145,7 +184,7 @@ afn af_std_union(afn a1, afn a2)
     af.st_ac = malloc(af.st_nb * sizeof(*af.st_ac));
     /* Indique si le nouvel état initial doit être accepteur. */
     af.st_ac[ST_INIT] = a1.st_ac[ST_INIT] || a2.st_ac[ST_INIT];
-    /* Copie les listes d'états finaux successivement hormis les anciens états initiaux. */
+    /* Copie les listes d'états accepteurs successivement hormis les anciens états initiaux. */
     memcpy(&af.st_ac[ST_INIT + 1], &a1.st_ac[ST_INIT + 1], (a1.st_nb - 1) * sizeof(*a1.st_ac));
     memcpy(&af.st_ac[a1.st_nb],    &a2.st_ac[ST_INIT + 1], (a2.st_nb - 1) * sizeof(*a2.st_ac));
 
@@ -169,7 +208,6 @@ afn af_std_union(afn a1, afn a2)
 /**
  * Retourne un automate standard qui reconnait la concaténation des deux langages
  * reconnus par deux automates.
- * @TODO
  */
 afn af_std_cat(afn a1, afn a2)
 {
@@ -192,15 +230,9 @@ afn af_std_cat(afn a1, afn a2)
     af_std_trans_copy(&af, &a1, 0,        0, a1.st_nb, 0);
     af_std_trans_copy(&af, &a2, a1.st_nb, 1, a2.st_nb - 1, 1);
     /* Tout les états accepteurs de af appartennant à a1 doivent récupérer les transitions qui partait de l'ancien état inital de a2. */
-    for (int i = 0; i < a1.st_nb; i++) {
-        if (a1.st_ac[i]) {
-            af.tr[i].nb += a2.tr[ST_INIT].nb;
-            af.tr[i].st = realloc(af.tr[i].st, af.tr[i].nb * sizeof(*af.tr[i].st));
-            af.tr[i].c  = realloc(af.tr[i].c,  af.tr[i].nb * sizeof(*af.tr[i].c));
-            memcpy(&af.tr[i].st[a1.tr[i].nb], a2.tr[ST_INIT].st, a2.tr[ST_INIT].nb * sizeof(*af.tr[i].st));
-            memcpy(&af.tr[i].c[a1.tr[i].nb],  a2.tr[ST_INIT].c,  a2.tr[ST_INIT].nb * sizeof(*af.tr[i].c));
-            af_std_trans_update(&af.tr[i].st[a1.tr[i].nb], a2.tr[ST_INIT].nb, a1.st_nb - 1);
-        }
+    for (int i = ST_INIT; i < a1.st_nb; i++) {
+        if (a1.st_ac[i])
+            af_std_trans_cat(&af.tr[i], &a1.tr[i], &a2.tr[ST_INIT], a1.st_nb - 1);
     }
     return af;
 }
@@ -208,11 +240,29 @@ afn af_std_cat(afn a1, afn a2)
 /**
  * Retourne un automate standard qui reconnait la fermeture itérative de Kleene
  * du langage reconnu par un automate.
- * @TODO
  */
 afn af_std_star(afn a)
 {
     afn af = {0};
+    /* Nombre d'état. */
+    af.st_nb = a.st_nb;
+    
+    /* États accepteurs. */
+    af.st_ac = malloc(af.st_nb * sizeof(*af.st_ac));
+    /* L'état initial est forcément accepteur. */
+    af.st_ac[ST_INIT] = 1;
+    /* Copie les listes d'états accepteurs sauf l'ancien état initial. */
+    memcpy(&af.st_ac[ST_INIT + 1], &a.st_ac[ST_INIT + 1], (af.st_nb - 1) * sizeof(*af.st_ac));
+    
+    /* Transitions. */
+    af.tr = malloc(af.st_nb * sizeof(*af.tr));
+    /* Copie les listes de transitions successivement pour tout les états. */
+    af_std_trans_copy(&af, &a, 0, 0, a.st_nb, 0);
+    /* Tout les états accepteurs de af (sauf état initial) doivent récupérer les mêmes transitions que l'état inital. */
+    for (int i = ST_INIT + 1; i < af.st_nb; i++) {
+        if (af.st_ac[i])
+            af_std_trans_cat(&af.tr[i], &a.tr[i], &af.tr[ST_INIT], 0);
+    }
     return af;
 }
 
@@ -235,7 +285,7 @@ int afd_exec(const afd a, const char * m)
  * déterministe standard.
  * @TODO
  */
-afd afd_from_af_std(const afd a)
+afd afd_from_afn_std(const afn a)
 {
     afd af = {0};
     return af;
@@ -254,18 +304,24 @@ afd afd_min_from_afd(const afd a)
 int main(int argc, char *argv[])
 {
     (void) argc; (void) argv;
-    printf("Hello World!\n");
     afn empty = af_std_gen_empty_word();
     afn a = af_std_gen_word('a');
     afn b = af_std_gen_word('b');
     afn c = af_std_gen_word('c');
     afn ab = af_std_cat(a, b);
     afn abc = af_std_union(ab, c);
+    afn abcs = af_std_star(abc);
+    afn f = af_std_cat(abcs, a);
+    afn fi = af_std_union(f, empty);
+    af_display(fi, "fi");
     af_free(empty);
     af_free(a);
     af_free(b);
     af_free(c);
     af_free(ab);
     af_free(abc);
+    af_free(abcs);
+    af_free(f);
+    af_free(fi);
     return 0;
 }
